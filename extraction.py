@@ -23,14 +23,14 @@ def get_cik(ticker, lookup):
 # print(f"{get_cik("DJP", lookup)}")
 
 
-def get_filing_histroy(cik):
+def get_filing_history(cik, start_date="2024-01-01"):
     """Get form 4 filing history for a specific company via CIK """
     response = requests.get(f"https://data.sec.gov/submissions/CIK{cik:010d}.json", headers=EDGAR_HEADERS).json()
     time.sleep(0.1)
     
     results = []
     for i, form_type in enumerate(response['filings']['recent']['form']):
-        if form_type == '4':
+        if form_type == '4' and response['filings']['recent']['filingDate'][i] >= start_date:
             results.append({'accessionNumber' : response['filings']['recent']['accessionNumber'][i],
                             'filingDate' : response['filings']['recent']['filingDate'][i],
                             'form' : response['filings']['recent']['form'][i],
@@ -51,7 +51,8 @@ def get_filing(cik, accession_number, primary_document):
     issuer = root.find("issuer/issuerName").text
     reportingOwner = root.find("reportingOwner/reportingOwnerId/rptOwnerName").text
     reportingOwnerCik = root.find("reportingOwner/reportingOwnerId/rptOwnerCik").text
-    aff10b5One = root.find("aff10b5One").text == "true"
+    aff10b5One_el = root.find("aff10b5One")
+    aff10b5One = aff10b5One_el.text == 'true' if aff10b5One_el is not None else None
     result = {"issuerName" : issuer,
               "reportingOwner": reportingOwner,
               "aff10b5One": aff10b5One,
@@ -64,9 +65,8 @@ def get_filing(cik, accession_number, primary_document):
         shares = transaction.find("transactionAmounts/transactionShares/value").text
         if shares is not None: 
             shares = float(shares) 
-        price = transaction.find("transactionAmounts/transactionPricePerShare/value").text
-        if price is not None: 
-            price = float(price)
+        price_el = transaction.find("transactionAmounts/transactionPricePerShare/value")
+        price = float(price_el.text) if price_el is not None else None
         disposed_code = transaction.find("transactionAmounts/transactionAcquiredDisposedCode/value").text
         result['transactions'].append({"code" : code,
                                        "shares" : shares,
@@ -79,5 +79,5 @@ if __name__ == "__main__":
     # Quick smoke test against the live SEC EDGAR API.
     lookup = build_cik_lookup()
     cik = get_cik("AAPL", lookup)
-    filings = get_filing_histroy(cik)
+    filings = get_filing_history(cik)
     print(get_filing(cik, filings[0]['accessionNumber'], filings[0]['primaryDocument']))
