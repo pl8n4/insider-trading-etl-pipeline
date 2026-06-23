@@ -4,17 +4,29 @@ from config import EDGAR_HEADERS
 
 SAMPLE_XML = """<ownershipDocument>
     <issuer>
+        <issuerCik>0000320193</issuerCik>
         <issuerName>Apple Inc.</issuerName>
+        <issuerTradingSymbol>AAPL</issuerTradingSymbol>
     </issuer>
     <reportingOwner>
         <reportingOwnerId>
             <rptOwnerName>Tim Cook</rptOwnerName>
             <rptOwnerCik>0001513142</rptOwnerCik>
         </reportingOwnerId>
+        <reportingOwnerRelationship>
+            <isDirector>true</isDirector>
+            <isOfficer>true</isOfficer>
+            <isTenPercentOwner>false</isTenPercentOwner>
+            <isOther>false</isOther>
+            <officerTitle>Chief Executive Officer</officerTitle>
+        </reportingOwnerRelationship>
     </reportingOwner>
     <aff10b5One>true</aff10b5One>
     <nonDerivativeTable>
         <nonDerivativeTransaction>
+            <securityTitle>
+                <value>Common Stock</value>
+            </securityTitle>
             <transactionCoding>
                 <transactionCode>P</transactionCode>
             </transactionCoding>
@@ -29,8 +41,22 @@ SAMPLE_XML = """<ownershipDocument>
                     <value>A</value>
                 </transactionAcquiredDisposedCode>
             </transactionAmounts>
+            <postTransactionAmounts>
+                <sharesOwnedFollowingTransaction>
+                    <value>5000</value>
+                </sharesOwnedFollowingTransaction>
+            </postTransactionAmounts>
+            <ownershipNature>
+                <directOrIndirectOwnership>
+                    <value>D</value>
+                </directOrIndirectOwnership>
+            </ownershipNature>
+            <footnoteId id="F1"/>
         </nonDerivativeTransaction>
     </nonDerivativeTable>
+    <footnotes>
+        <footnote id="F1">Open-market purchase.</footnote>
+    </footnotes>
 </ownershipDocument>"""
 
 SAMPLE_TICKERS_JSON = {
@@ -63,13 +89,25 @@ def test_get_cik_invalid_ticker():
 def test_parse_filing_normal():
     result = parse_filing(SAMPLE_XML)
     assert result['issuerName'] == 'Apple Inc.'
+    assert result['issuerCik'] == 320193
+    assert result['issuerTradingSymbol'] == 'AAPL'
     assert result['reportingOwner'] == 'Tim Cook'
     assert result['reportingOwnerCik'] == 1513142
+    assert result['isDirector'] == True
+    assert result['isOfficer'] == True
+    assert result['isTenPercentOwner'] == False
+    assert result['isOther'] == False
+    assert result['officerTitle'] == 'Chief Executive Officer'
+    assert result['footnotes'] == {'F1': 'Open-market purchase.'}
     assert len(result['transactions']) == 1
     assert result['transactions'][0]['code'] == 'P'
+    assert result['transactions'][0]['securityTitle'] == 'Common Stock'
     assert result['transactions'][0]['shares'] == 100.0
     assert result['transactions'][0]['price'] == 150.00
     assert result['transactions'][0]['disposed_code'] == 'A'
+    assert result['transactions'][0]['sharesOwnedFollowing'] == 5000.0
+    assert result['transactions'][0]['directOrIndirectOwnership'] == 'D'
+    assert result['transactions'][0]['footnoteIds'] == ['F1']
 
 def test_parse_filing_no_aff10b5one():
     SAMPLE_XML_no_aff10b5One = SAMPLE_XML.replace("<aff10b5One>true</aff10b5One>", "")

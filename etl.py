@@ -1,4 +1,4 @@
-from config import get_connection
+from config import TICKERS, get_connection
 from extraction import get_filing, get_filing_history, build_cik_lookup
 from ingestion import load_filing
 
@@ -16,12 +16,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-
-TICKERS = [
-    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
-    "JPM", "BAC", "GS", "WFC", "MS",
-    "JNJ", "PFE", "UNH", "MRK", "ABBV"
-    ]
 
 conn = None
 
@@ -41,6 +35,7 @@ try:
     for ticker in TICKERS:
         logger.info(f"Processing ticker: {ticker}")
         issuer_cik = lookup[ticker]
+        # Change starting date to modify how far back the filings ingested go
         filings = get_filing_history(issuer_cik, "2026-01-01")
 
         for filing in filings:

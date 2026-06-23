@@ -13,5 +13,11 @@ HOST = os.environ.get("DB_HOST", "localhost")
 DBNAME = os.environ.get("DB_NAME", "insider_signals")
 USER = os.environ.get("DB_USER", "pablolasarte")
 
+TICKERS = [
+    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
+    "JPM", "BAC", "GS", "WFC", "MS",
+    "JNJ", "PFE", "UNH", "MRK", "ABBV"
+]
+
 def get_connection():
     return psycopg2.connect(host=HOST, dbname=DBNAME, user=USER)
