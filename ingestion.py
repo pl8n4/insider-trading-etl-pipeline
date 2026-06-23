@@ -5,6 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def load_filing(conn, filing_data, issuer_cik, ticker, accession_number, filing_date):
+    """Ingest a filing to the postgres db"""
     cur = conn.cursor()
     try:
         sql = "INSERT INTO issuer (issuer_cik, name, ticker) VALUES (%s, %s, %s) " \
@@ -22,6 +23,7 @@ def load_filing(conn, filing_data, issuer_cik, ticker, accession_number, filing_
 
         
         if cur.rowcount == 0:
+            conn.commit()
             return {"skipped": True, "transactions_inserted": 0}
         else:
             count = 0
@@ -36,4 +38,3 @@ def load_filing(conn, filing_data, issuer_cik, ticker, accession_number, filing_
     except psycopg2.DatabaseError as error:
         print(error)
         conn.rollback()
-    

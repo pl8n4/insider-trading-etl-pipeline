@@ -20,8 +20,6 @@ def get_cik(ticker, lookup):
     except KeyError as e:
         print(f"{ticker} is invalid or not in the lookup table.")
 
-# print(f"{get_cik("DJP", lookup)}")
-
 
 def get_filing_history(cik, start_date="2024-01-01"):
     """Get form 4 filing history for a specific company via CIK """
@@ -46,8 +44,11 @@ def get_filing(cik, accession_number, primary_document):
     
     response = requests.get(f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_number}/{primary_document}", headers=EDGAR_HEADERS)
     time.sleep(0.1)
-    root = ET.fromstring(response.text)
+    return parse_filing(response.text)
 
+def parse_filing(xml_text):
+    """Parses a form 4 filing xml in string format"""
+    root = ET.fromstring(xml_text)
     issuer = root.find("issuer/issuerName").text
     reportingOwner = root.find("reportingOwner/reportingOwnerId/rptOwnerName").text
     reportingOwnerCik = root.find("reportingOwner/reportingOwnerId/rptOwnerCik").text
@@ -75,7 +76,8 @@ def get_filing(cik, accession_number, primary_document):
 
     return result
 
-if __name__ == "__main__":
+
+if __name__ == "__main__": # pragma: no cover
     # Quick smoke test against the live SEC EDGAR API.
     lookup = build_cik_lookup()
     cik = get_cik("AAPL", lookup)
